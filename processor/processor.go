@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -43,6 +44,9 @@ func GetTopProcesses(ctx context.Context) string {
 	}
 
 	var wg sync.WaitGroup
+	var cpuList, memList []models.ProcStat
+	procChan := make(chan models.ProcStat, len(processes))
+
 	for _, p := range processes {
 		wg.Add(1)
 		go func(proc *process.Process) {
@@ -80,22 +84,69 @@ func GetTopProcesses(ctx context.Context) string {
 				runningTime := time.Since(time.Unix(createTime/1000, 0))
 
 				if cpuPercent > 1 || ramPercent > 1 {
-					procStat := models.ProcStat{
-						PID: proc.Pid,
-						Name: name,
-						CPU: cpuPercent,
-						Memory: memInfo.RSS,
-						RamPercent: ramPercent,
+					procChan <- models.ProcStat{
+						PID:         proc.Pid,
+						Name:        name,
+						CPU:         cpuPercent,
+						Memory:      memInfo.RSS,
+						RamPercent:  ramPercent,
 						RunningTime: runningTime,
 					}
 
-					fmt.Printf("%v \n", procStat)
 				}
-
 
 			}
 		}(p)
 	}
-	wg.Wait()
-	return ""
+
+	go func() {
+		wg.Wait()
+		close(procChan)
+	}()
+
+	for stat := range procChan {
+		if stat.CPU > 1 {
+			cpuList = append(cpuList, stat)
+		}
+
+		if stat.RamPercent > 1 {
+			memList = append(memList, stat)
+		}
+	}
+
+	sort.Slice(cpuList, func(i, j int) bool {
+		return cpuList[i].CPU > cpuList[j].CPU
+	})
+
+	sort.Slice(memList, func(i, j int) bool {
+		return memList[i].RamPercent > memList[j].RamPercent
+	})
+
+	output := "=== Top 5 Cpu dung nhieu nhat \n"
+	for i := 0; i < len(cpuList) && i < 5; i++ {
+		output += fmt.Sprintf("%d. [%d] %s - CPU: %.2f%% - RAM: %.2f MB (%.2f%%) - Running: %s \n",
+			i+1,
+			cpuList[i].PID,
+			cpuList[i].Name,
+			cpuList[i].CPU,
+			float64(cpuList[i].Memory)/1024.0/1024.0,
+			cpuList[i].RamPercent,
+			cpuList[i].RunningTime,
+		)
+	}
+
+	output += "=== Top 5 RAM dung nhieu nhat \n"
+	for i := 0; i < len(memList) && i < 5; i++ {
+		output += fmt.Sprintf("%d. [%d] %s - CPU: %.2f%% - RAM: %.2f MB (%.2f%%) - Running: %s \n",
+			i+1,
+			memList[i].PID,
+			memList[i].Name,
+			memList[i].CPU,
+			float64(memList[i].Memory)/1024.0/1024.0,
+			memList[i].RamPercent,
+			memList[i].RunningTime,
+		)
+	}
+
+	return output
 }

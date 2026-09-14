@@ -49,7 +49,7 @@ func main() {
 				models.Mtx.Unlock()
 			}
 
-			processor.GetTopProcesses(ctx)
+			fmt.Println(processor.GetTopProcesses(ctx))
 		}
 
 	}()
