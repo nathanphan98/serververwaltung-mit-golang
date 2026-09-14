@@ -16,11 +16,11 @@ func (cpuM *CPUMonitor) GetName() string {
 }
 
 func (cpuM *CPUMonitor) Check(ctx context.Context) string {
-	percent, err := cpu.PercentWithContext(ctx, 1*time.Second, false)
+	cpuStat, err := cpu.PercentWithContext(ctx, 1*time.Second, false)
 
 	if err != nil {
 		return "ko có"
 	}
 
-	return fmt.Sprintf("%.2f %%", percent[0])
+	return fmt.Sprintf("%.2f %%", cpuStat[0])
 }
