@@ -38,10 +38,10 @@ func main() {
 		}
 	}()
 
-	printTicker := time.NewTicker(3 * time.Second)
+	printTicker := time.NewTicker(4 * time.Second)
 
 	go func() {
-		for range printTicker.C {
+		for range printTicker.C { // đợi 4s trước khi có data từ goroutine RunMonitor
 			fmt.Println("=== System status ===")
 			for _, stat := range models.Stats {
 				models.Mtx.Lock()
