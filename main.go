@@ -13,7 +13,6 @@ import (
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 
 	cn := make(chan models.SystemStat)
 
@@ -32,11 +31,30 @@ func main() {
 	}
 
 	go func() {
-		wg.Wait() // khi nào Wait mở block thì mới chạy xuống close()
-		close(cn)
+		for i := range cn {
+			models.Mtx.Lock()
+			models.Stats[i.Name] = i
+			models.Mtx.Unlock()
+		}
 	}()
 
-	for i := range cn {
-		fmt.Println(i)
-	}
+	printTicker := time.NewTicker(4 * time.Second)
+
+	go func() {
+		for range printTicker.C { // đợi 4s trước khi có data từ goroutine RunMonitor
+			fmt.Println("=== System status ===")
+			for _, stat := range models.Stats {
+				models.Mtx.Lock()
+				fmt.Printf("[%s] %s \n", stat.Name, stat.Value)
+				models.Mtx.Unlock()
+			}
+		}
+
+	}()
+
+	time.Sleep(30 * time.Second)
+	cancel()
+	wg.Wait() // khi nào Wait mở block thì mới chạy xuống close()
+	close(cn)
+	printTicker.Stop()
 }

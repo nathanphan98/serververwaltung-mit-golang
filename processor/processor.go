@@ -24,5 +24,4 @@ func RunMonitor(ctx context.Context, wg *sync.WaitGroup, cn chan<- models.System
 			}
 		}
 	}
-
 }
