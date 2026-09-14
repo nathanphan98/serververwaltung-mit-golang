@@ -22,11 +22,11 @@ func main() {
 	// dùng goroutine để tránh main chỉ để dùng làm 1 việc
 
 	go func() {
-		for i := range cn {
-			fmt.Println(i)
-		}
+		wg.Wait() // khi nào Wait mở block thì mới chạy xuống close()
+		close(cn)
 	}()
 
-	wg.Wait() // khi nào Wait mở block thì mới chạy xuống close()
-	close(cn)
+	for i := range cn {
+		fmt.Println(i)
+	}
 }
