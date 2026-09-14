@@ -20,6 +20,8 @@ func main() {
 	monitors := []models.IMonitor{ // 1 slice chứa 2 struct kiểu interface Monitor
 		&monitors.CPUMonitor{}, // các receiver của struct này yêu cầu * nên giá trị của kiểu interface models.Monitor phải là kiểu con trỏ
 		&monitors.MemoryMonitor{},
+		&monitors.NetMonitor{},
+		&monitors.DiskMonitor{},
 	}
 
 	var wg sync.WaitGroup
