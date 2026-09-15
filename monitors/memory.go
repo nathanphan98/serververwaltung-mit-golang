@@ -14,12 +14,12 @@ func (memoryM *MemoryMonitor) GetName() string {
 	return "Memory"
 }
 
-func (memoryM *MemoryMonitor) Check(ctx context.Context) string {
+func (memoryM *MemoryMonitor) Check(ctx context.Context) (string , bool) {
 	virtualMemoryStat, err := mem.VirtualMemoryWithContext(ctx)
 
 	if err != nil {
-		return "ko có"
+		return "ko có", false
 	}
 
-	return fmt.Sprintf("%.2f %%", virtualMemoryStat.UsedPercent)
+	return fmt.Sprintf("%.2f %%", virtualMemoryStat.UsedPercent), virtualMemoryStat.UsedPercent > 60
 }

@@ -14,13 +14,13 @@ func (cpuM *DiskMonitor) GetName() string {
 	return "Disk"
 }
 
-func (cpuM *DiskMonitor) Check(ctx context.Context) string {
+func (cpuM *DiskMonitor) Check(ctx context.Context) (string , bool) {
 	path := "/"
 	diskStat, err := disk.UsageWithContext(ctx, path)
 
 	if err != nil {
-		return "ko có"
+		return "ko có", false
 	}
 
-	return fmt.Sprintf(" %.2f%% used", diskStat.UsedPercent )
+	return fmt.Sprintf(" %.2f%% used", diskStat.UsedPercent ), diskStat.UsedPercent > 60
 }
