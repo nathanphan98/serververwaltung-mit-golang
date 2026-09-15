@@ -13,7 +13,7 @@ type SystemStat struct {
 
 type IMonitor interface {
 	GetName() string
-	Check(ctx context.Context) string
+	Check(ctx context.Context) (string, bool)
 }
 
 type ProcStat struct {

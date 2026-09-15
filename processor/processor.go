@@ -23,10 +23,16 @@ func RunMonitor(ctx context.Context, wg *sync.WaitGroup, cn chan<- models.System
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			cn <- models.SystemStat{
+			val, err := m.Check(ctx)
+			stat := models.SystemStat{
 				Name:  m.GetName(),
-				Value: m.Check(ctx),
+				Value: val,
 			}
+			cn <- stat
+			if err {
+				LogAlert(stat)
+			}
+
 		}
 	}
 }
@@ -193,4 +199,20 @@ func ExportToCSV(cpuList, memoryList []models.ProcStat) {
 		)
 		file.WriteString(line)
 	}
+}
+
+func LogAlert(stat models.SystemStat) {
+	models.Mtx.Lock()
+	defer models.Mtx.Unlock()
+
+	file, err := os.OpenFile("alert.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("[Log Alert] ghi log loi ko thanh cong: ", err)
+		return
+	}
+	defer file.Close()
+
+	timeStamp := time.Now().Format(time.RFC3339)
+	logLine := fmt.Sprintf("[%s] ALERT: %s = %s \n", timeStamp, stat.Name, stat.Value)
+	file.WriteString(logLine)
 }

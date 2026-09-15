@@ -15,12 +15,12 @@ func (cpuM *CPUMonitor) GetName() string {
 	return "Cpu"
 }
 
-func (cpuM *CPUMonitor) Check(ctx context.Context) string {
+func (cpuM *CPUMonitor) Check(ctx context.Context) (string , bool) {
 	cpuStat, err := cpu.PercentWithContext(ctx, 1*time.Second, false)
 
 	if err != nil {
-		return "ko có"
+		return "ko có", false
 	}
 
-	return fmt.Sprintf("%.2f %%", cpuStat[0])
+	return fmt.Sprintf("%.2f %%", cpuStat[0]), cpuStat[0] > 60
 }
