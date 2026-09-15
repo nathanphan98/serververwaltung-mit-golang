@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -148,5 +149,48 @@ func GetTopProcesses(ctx context.Context) string {
 		)
 	}
 
+	ExportToCSV(cpuList, memList)
+
 	return output
+}
+
+func ExportToCSV(cpuList, memoryList []models.ProcStat) {
+	file, err := os.OpenFile("process_stats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // 644: chủ file được đọc và ghi, người khác chỉ đọc file mà ko dc sửa
+	if err != nil {
+		fmt.Println("[Export To CSV] ghi vao CSV ko thanh cong: ", err)
+		return
+	}
+	defer file.Close()
+
+	if stat, err := file.Stat(); err == nil && stat.Size() == 0 { // header
+		file.WriteString("Timestamp,PID,Name,CPU (%), RAM (MB), RAM (%), Running Time \n")
+	}
+
+	timeStamp := time.Now().Format(time.RFC3339)
+
+	for i := 0; i < len(cpuList) && i < 5; i++ {
+		line := fmt.Sprintf("%s,%d,%s,%.2f,%.2f,%.2f,%s\n",
+			timeStamp,
+			cpuList[i].PID,
+			cpuList[i].Name,
+			cpuList[i].CPU,
+			float64(cpuList[i].Memory)/1024.0/1024.0,
+			cpuList[i].RamPercent,
+			cpuList[i].RunningTime,
+		)
+		file.WriteString(line)
+	}
+
+	for i := 0; i < len(memoryList) && i < 5; i++ {
+		line := fmt.Sprintf("%s,%d,%s,%.2f,%.2f,%.2f,%s\n",
+			timeStamp,
+			memoryList[i].PID,
+			memoryList[i].Name,
+			memoryList[i].CPU,
+			float64(memoryList[i].Memory)/1024.0/1024.0,
+			memoryList[i].RamPercent,
+			memoryList[i].RunningTime,
+		)
+		file.WriteString(line)
+	}
 }
