@@ -48,6 +48,8 @@ func main() {
 				fmt.Printf("[%s] %s \n", stat.Name, stat.Value)
 				models.Mtx.Unlock()
 			}
+
+			fmt.Println(processor.GetTopProcesses(ctx))
 		}
 
 	}()
